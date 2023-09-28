@@ -3,7 +3,7 @@ import User from '../models/user';
 
 export const getUsers = (req: Request, res: Response) => User
   .find({})
-  .then((users) => res.status(200).send({ data: users }))
+  .then((users) => res.send({ data: users }))
   .catch((err) => res.status(500).send({ message: err.message }));
 
 export const getUserById = (req: Request, res: Response) => User
