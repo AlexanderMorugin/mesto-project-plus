@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { model, Schema } from 'mongoose';
 
 export interface ICard {
   name: string;
@@ -33,4 +33,4 @@ const cardSchema = new Schema<ICard>({
   },
 });
 
-export default model<ICard>("Card", cardSchema);
+export default model<ICard>('card', cardSchema);
