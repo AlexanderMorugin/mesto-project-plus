@@ -2,7 +2,8 @@ import { Router } from 'express';
 import {
   getCards, createCard,
   deleteCardById,
-  putCardLike,
+  likeCard,
+  dislikeCard,
 } from '../controllers/card-controller';
 
 const cardRouter = Router();
@@ -10,7 +11,7 @@ const cardRouter = Router();
 cardRouter.get('/', getCards);
 cardRouter.post('/', createCard);
 cardRouter.delete('/:cardId', deleteCardById);
-cardRouter.put('/:cardId/likes', putCardLike);
-// cardRouter.delete('/:cardId', deleteCardById);
+cardRouter.put('/:cardId/likes', likeCard);
+cardRouter.delete('/:cardId/likes', dislikeCard);
 
 export default cardRouter;

@@ -27,10 +27,10 @@ export const createUser = (req: Request, res: Response) => {
 
 export const updateUser = (req: UserRequest, res: Response) => {
   const { name, about } = req.body;
-  const id = req.user?._id;
+  const userId = req.user?._id;
 
   User
-    .findByIdAndUpdate(id, { name, about })
+    .findByIdAndUpdate(userId, { name, about })
     .then((result: any) => {
       res.status(200).json(result);
     })
@@ -39,10 +39,10 @@ export const updateUser = (req: UserRequest, res: Response) => {
 
 export const updateAvatar = (req: UserRequest, res: Response) => {
   const avatar = req.body;
-  const id = req.user?._id;
+  const userId = req.user?._id;
 
   User
-    .findByIdAndUpdate(id, avatar)
+    .findByIdAndUpdate(userId, avatar)
     .then((result: any) => {
       res.status(200).json(result);
     })
