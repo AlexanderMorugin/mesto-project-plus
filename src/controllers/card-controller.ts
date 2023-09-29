@@ -18,8 +18,18 @@ export const createCard = (req: UserRequest, res: Response) => {
     .catch((err) => res.status(500).send({ message: err.message }));
 };
 
-module.exports.getCards = (req: Request, res: Response) => Card
-  .find({})
-  .populate('owner')
-  .then((cards) => res.send({ data: cards }))
-  .catch((err) => res.status(500).send({ message: err.message }));
+export const deleteCardById = (req: Request, res: Response) => {
+  const { cardId } = req.params;
+  Card
+    .findByIdAndDelete(cardId)
+    .then((result: any) => {
+      res.status(200).json(result);
+    })
+    .catch((err) => res.status(500).send({ message: err.message }));
+};
+
+// module.exports.getCards = (req: Request, res: Response) => Card
+//   .find({})
+//   .populate('owner')
+//   .then((cards) => res.send({ data: cards }))
+//   .catch((err) => res.status(500).send({ message: err.message }));
