@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
-import User from '../models/user';
+
+// eslint-disable-next-line import/no-unresolved
 import { UserRequest } from 'utils/user-request';
+import User from '../models/user';
 
 export const getUsers = (req: Request, res: Response) => User
   .find({})
@@ -29,6 +31,18 @@ export const updateUser = (req: UserRequest, res: Response) => {
 
   User
     .findByIdAndUpdate(id, { name, about })
+    .then((result: any) => {
+      res.status(200).json(result);
+    })
+    .catch((err) => res.status(500).send({ message: err.message }));
+};
+
+export const updateAvatar = (req: UserRequest, res: Response) => {
+  const avatar = req.body;
+  const id = req.user?._id;
+
+  User
+    .findByIdAndUpdate(id, avatar)
     .then((result: any) => {
       res.status(200).json(result);
     })
