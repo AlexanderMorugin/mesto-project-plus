@@ -20,8 +20,21 @@ export const createCard = (req: UserRequest, res: Response) => {
 
 export const deleteCardById = (req: Request, res: Response) => {
   const { cardId } = req.params;
+
   Card
     .findByIdAndDelete(cardId)
+    .then((result: any) => {
+      res.status(200).json(result);
+    })
+    .catch((err) => res.status(500).send({ message: err.message }));
+};
+
+export const putCardLike = (req: UserRequest, res: Response) => {
+  const { cardId } = req.params;
+  const likerId = req.user?._id;
+
+  Card
+    .findByIdAndUpdate(cardId, { $addToSet: { likes: likerId } })
     .then((result: any) => {
       res.status(200).json(result);
     })
