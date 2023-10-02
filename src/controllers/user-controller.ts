@@ -3,50 +3,112 @@ import { Request, Response } from 'express';
 // eslint-disable-next-line import/no-unresolved
 import { UserRequest } from 'utils/user-request';
 import User from '../models/user';
+import {
+  CREATE_SUCCES_MESSAGE,
+  INVALID_DATA_MESSAGE,
+  SERVER_ERROR_MESSAGE,
+  STATUS_BAD_REQUEST,
+  STATUS_CREATED,
+  STATUS_NOT_FOUND,
+  STATUS_SERVER_ERROR,
+  STATUS_SUCCESS,
+  SUCCES_MESSAGE,
+  USER_NOT_FOUND_MESSAGE,
+} from '../utils/status-error';
 
-export const getUsers = (req: Request, res: Response) => User
-  .find({})
-  .then((users) => res.send({ data: users }))
-  .catch((err) => res.status(500).send({ message: err.message }));
+export const getUsers = (req: Request, res: Response) => {
+  User
+    .find({})
+    .then((users) => {
+      console.log(SUCCES_MESSAGE);
+      res.status(STATUS_SUCCESS).send({ data: users });
+    })
+    .catch((err) => {
+      console.log(err.message);
+      res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+    });
+};
 
-export const getUserById = (req: Request, res: Response) => User
-  .findById(req.params.id)
-  .then((user) => {
-    res.status(200).json(user);
-  })
-  .catch((err) => res.status(500).send({ message: err.message }));
+export const getUserById = (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  return User
+    .findById(userId)
+    .then((user) => {
+      console.log(SUCCES_MESSAGE);
+      res.status(STATUS_SUCCESS).json(user);
+    })
+    .catch((err) => {
+      if (err.name === 'NotFoundError') {
+        res.status(STATUS_NOT_FOUND).send({ message: USER_NOT_FOUND_MESSAGE });
+      } else {
+        console.log(err.message);
+        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+      }
+    });
+}
 
 export const createUser = (req: Request, res: Response) => {
   const { name, about, avatar } = req.body;
 
   return User
     .create({ name, about, avatar })
-    .then((user) => res.send({ data: user }))
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .then((user) => {
+      console.log(CREATE_SUCCES_MESSAGE);
+      res.status(STATUS_CREATED).send({ data: user });
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(STATUS_BAD_REQUEST).send({ message: INVALID_DATA_MESSAGE });
+      } else {
+        console.log(err.message);
+        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+      }
+    });
 };
 
 export const updateUser = (req: UserRequest, res: Response) => {
   const { name, about } = req.body;
   const userId = req.user?._id;
 
-  User
+  return User
     .findByIdAndUpdate(userId, { name, about })
-    .then((result: any) => {
-      res.status(200).json(result);
+    .then((result) => {
+      console.log(SUCCES_MESSAGE);
+      res.status(STATUS_SUCCESS).json(result);
     })
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(STATUS_BAD_REQUEST).send({ message: INVALID_DATA_MESSAGE });
+      } else if (err.name === 'NotFoundError') {
+        res.status(STATUS_NOT_FOUND).send({ message: USER_NOT_FOUND_MESSAGE });
+      } else {
+        console.log(err.message);
+        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+      }
+    });
 };
 
 export const updateAvatar = (req: UserRequest, res: Response) => {
   const avatar = req.body;
   const userId = req.user?._id;
 
-  User
+  return User
     .findByIdAndUpdate(userId, avatar)
-    .then((result: any) => {
-      res.status(200).json(result);
+    .then((result) => {
+      console.log(SUCCES_MESSAGE);
+      res.status(STATUS_SUCCESS).json(result);
     })
-    .catch((err) => res.status(500).send({ message: err.message }));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        res.status(STATUS_BAD_REQUEST).send({ message: INVALID_DATA_MESSAGE });
+      } else if (err.name === 'NotFoundError') {
+        res.status(STATUS_NOT_FOUND).send({ message: USER_NOT_FOUND_MESSAGE });
+      } else {
+        console.log(err.message);
+        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+      }
+    });
 };
 
 // export const deleteUserById = (req: Request, res: Response) => User
@@ -55,5 +117,3 @@ export const updateAvatar = (req: UserRequest, res: Response) => {
 //     res.status(200).json(result);
 //   })
 //   .catch((err) => res.status(500).send({ message: err.message }));
-
-
