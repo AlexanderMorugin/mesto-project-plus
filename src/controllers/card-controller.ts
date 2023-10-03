@@ -57,7 +57,7 @@ export const deleteCardById = (req: Request, res: Response) => {
     .findByIdAndDelete(cardId)
     .then((result) => {
       console.log(SUCCES_MESSAGE);
-      res.status(STATUS_SUCCESS).json(result);
+      res.status(STATUS_SUCCESS).send({ data: result });
     })
     .catch((err) => {
       if (err.name === 'NotFoundError') {

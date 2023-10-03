@@ -16,6 +16,6 @@ export const CARD_NOT_FOUND_MESSAGE = 'Карточкa не найденa';
 
 // 500 — ошибка по умолчанию.
 export const STATUS_SERVER_ERROR = 500;
-export const SERVER_ERROR_MESSAGE = 'Произошла ошибка на сервере';
+export const SERVER_ERROR_MESSAGE = 'На сервере произошла ошибка';
 
 export const CARD_DELETE_MESSAGE = 'Карточка успешно удалена';

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 // eslint-disable-next-line import/no-unresolved
 import { UserRequest } from 'utils/user-request';
+import bcrypt from 'bcrypt';
 import User from '../models/user';
 import {
   CREATE_SUCCES_MESSAGE,
@@ -90,11 +91,11 @@ export const updateUser = (req: UserRequest, res: Response) => {
 };
 
 export const updateAvatar = (req: UserRequest, res: Response) => {
-  const avatar = req.body;
+  const { avatar } = req.body;
   const userId = req.user?._id;
 
   return User
-    .findByIdAndUpdate(userId, avatar)
+    .findByIdAndUpdate(userId, { avatar })
     .then((result) => {
       console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).json(result);
@@ -111,9 +112,29 @@ export const updateAvatar = (req: UserRequest, res: Response) => {
     });
 };
 
-// export const deleteUserById = (req: Request, res: Response) => User
-//   .findByIdAndDelete(req.params.id)
-//   .then((result: any) => {
-//     res.status(200).json(result);
-//   })
-//   .catch((err) => res.status(500).send({ message: err.message }));
+export const login = (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  return User.findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new Error('Неправильные почта или пароль'));
+      }
+
+      return bcrypt.compare(password, user.password);
+    })
+    .then((matched) => {
+      if (!matched) {
+        // хеши не совпали — отклоняем промис
+        return Promise.reject(new Error('Неправильные почта или пароль'));
+      }
+
+      // аутентификация успешна
+      res.send({ message: 'Всё верно!' });
+    })
+    .catch((err) => {
+      res
+        .status(401)
+        .send({ message: err.message });
+    });
+};
