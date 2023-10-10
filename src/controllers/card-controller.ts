@@ -18,8 +18,7 @@ import Card from '../models/card';
 import { UserRequest } from '../utils/user-request';
 
 export const getCards = (req: Request, res: Response) => {
-  Card
-    .find({})
+  Card.find({}).populate(['owner', 'likes'])
     .then((cards) => {
       console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).send({ data: cards });
@@ -34,8 +33,7 @@ export const createCard = (req: UserRequest, res: Response) => {
   const { name, link } = req.body;
   const userId = req.user?._id;
 
-  return Card
-    .create({ name, link, owner: userId })
+  return Card.create({ name, link, owner: userId })
     .then((card) => {
       console.log(CREATE_SUCCES_MESSAGE);
       res.status(STATUS_CREATED).send({ data: card });
@@ -53,8 +51,7 @@ export const createCard = (req: UserRequest, res: Response) => {
 export const deleteCardById = (req: Request, res: Response) => {
   const { cardId } = req.params;
 
-  return Card
-    .findByIdAndDelete(cardId)
+  return Card.findByIdAndDelete(cardId)
     .then((result) => {
       console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).send({ data: result });
@@ -73,12 +70,11 @@ export const likeCard = (req: UserRequest, res: Response) => {
   const { cardId } = req.params;
   const userId = req.user?._id;
 
-  return Card
-    .findByIdAndUpdate(
-      cardId,
-      { $addToSet: { likes: userId } },
-      { new: true },
-    )
+  return Card.findByIdAndUpdate(
+    cardId,
+    { $addToSet: { likes: userId } },
+    { new: true },
+  ).populate(['owner', 'likes'])
     .then((result) => {
       console.log(CREATE_SUCCES_MESSAGE);
       res.status(STATUS_CREATED).json(result);
@@ -99,8 +95,7 @@ export const dislikeCard = (req: UserRequest, res: Response) => {
   const { cardId } = req.params;
   const userId = req.user?._id;
 
-  return Card
-    .findByIdAndUpdate(cardId, { $pull: { likes: userId } }, { new: true })
+  return Card.findByIdAndUpdate(cardId, { $pull: { likes: userId } }, { new: true }).populate(['owner', 'likes'])
     .then((result) => {
       console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).json(result);
@@ -116,9 +111,3 @@ export const dislikeCard = (req: UserRequest, res: Response) => {
       }
     });
 };
-
-// module.exports.getCards = (req: Request, res: Response) => Card
-//   .find({})
-//   .populate('owner')
-//   .then((cards) => res.send({ data: cards }))
-//   .catch((err) => res.status(500).send({ message: err.message }));
