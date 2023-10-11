@@ -30,14 +30,6 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// app.use((req: UserRequest, res: Response, next: NextFunction) => {
-//   req.user = {
-//     _id: '65157dee0c808465f2406638',
-//   };
-
-//   next();
-// });
-
 app.use(helmet());
 
 app.use(requestLogger); // подключаем логер запросов

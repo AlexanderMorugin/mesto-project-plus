@@ -8,6 +8,5 @@ export class NotFoundError extends Error implements IError {
   constructor(message: string) {
     super(message);
     this.statusCode = STATUS_NOT_FOUND;
-    // this.message = message;
   }
 }

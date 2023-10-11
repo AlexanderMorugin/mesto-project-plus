@@ -8,24 +8,18 @@ import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import User from '../models/user';
 import {
-  CREATE_SUCCES_MESSAGE,
-  INVALID_DATA_MESSAGE,
-  SERVER_ERROR_MESSAGE,
-  STATUS_BAD_REQUEST,
   STATUS_CREATED,
-  STATUS_NOT_FOUND,
-  STATUS_SERVER_ERROR,
   STATUS_SUCCESS,
-  SUCCES_MESSAGE,
-  USER_NOT_FOUND_MESSAGE,
 } from '../utils/status-error';
 import { NotFoundError } from '../errors/not-found-error';
 import { BadRequestError } from '../errors/bad-request-error';
+import { ConflictError } from '../errors/conflict-error';
+import { UnauthorizedError } from '../errors/unauthorized-error';
+import { ForbiddenError } from '../errors/forbidden-error';
 
 export const getUsers = (req: Request, res: Response, next: NextFunction) => {
   User.find({})
     .then((users) => {
-      console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).send(users);
     })
     .catch(next);
@@ -34,49 +28,53 @@ export const getUsers = (req: Request, res: Response, next: NextFunction) => {
 export const getUserById = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
 
-  return User
-    .findById(userId)
+  return User.findById(userId)
     .then((user) => {
       if (!user) {
-        throw new NotFoundError('Пользователь по указанному ID не найден');
+        next(new NotFoundError('Пользователь по указанному ID не найден'));
       }
       res.status(STATUS_SUCCESS).send(user);
     })
-    // .catch((err) => {
-    //   console.log(err);
-    //   if (err.name === 'CastError' || err.name === 'ValidationError') {
-    //     throw new NotFoundError('Пользователь по указанному ID не найден');
-    //   }
-    //   // next(err);
-    // });
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь по указанному ID не найден'));
+      }
+      next(err);
+    });
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const {
-    name, about, avatar, email, password,
-  } = req.body;
+  const { name, about, avatar, email, password } = req.body;
 
-  return bcrypt.hash(password, 10)
-    .then((hash: string) => User.create({
-      name, about, avatar, email, password: hash,
-    }))
-    .then((user) => {
-      res.status(STATUS_CREATED).send({
-        _id: user,
-        name: user.name,
-        about: user.about,
-        avatar: user.avatar,
-        email: user.email,
-      });
+  return bcrypt
+    .hash(password, 10)
+    .then((hash) => {
+      User.create({
+        name,
+        about,
+        avatar,
+        email,
+        password: hash,
+      })
+        .then((user) => {
+          res.status(STATUS_CREATED).send({
+            _id: user._id,
+            name: user.name,
+            about: user.about,
+            avatar: user.avatar,
+            email: user.email,
+          });
+        })
+        .catch((err) => {
+          if (err.code === 11000) {
+            next(new ConflictError('Пользователь с такой почтой уже существует'));
+          }
+          if (err.name === 'ValidationError') {
+            next(new BadRequestError('Неправильные почта или пароль'));
+          }
+          next(err);
+        });
     })
-    // .catch((err) => {
-    //   console.log(err);
-    //   if (err.name === 'CastError' || err.name === 'ValidationError') {
-    //     throw new BadRequestError('Переданы некорректные данные');
-    //   }
-    //   next(err);
-    // });
     .catch(next);
 };
 
@@ -93,16 +91,17 @@ export const updateUser = (req: UserRequest, res: Response, next: NextFunction) 
     },
   )
     .then((result) => {
-      console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).send(result);
     })
-    // .catch((err) => {
-    //   if (err.name === 'CastError' || err.name === 'ValidationError') {
-    //     throw new BadRequestError('Переданы некорректные данные при обновлении пользователя');
-    //   }
-    //   next(err);
-    // });
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь по указанному ID не найден'));
+      }
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при обновлении пользователя'));
+      }
+      next(err);
+    });
 };
 
 export const updateAvatar = (req: UserRequest, res: Response, next: NextFunction) => {
@@ -118,16 +117,17 @@ export const updateAvatar = (req: UserRequest, res: Response, next: NextFunction
     },
   )
     .then((result) => {
-      console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).json(result);
     })
-    // .catch((err) => {
-    //   if (err.name === 'CastError' || err.name === 'ValidationError') {
-    //     throw new BadRequestError('Переданы некорректные данные при обновлении аватара');
-    //   }
-    //   next(err);
-    // });
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь по указанному ID не найден'));
+      }
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные при обновлении аватара'));
+      }
+      next(err);
+    });
 };
 
 export const loginUser = (req: Request, res: Response, next: NextFunction) => {
@@ -135,44 +135,37 @@ export const loginUser = (req: Request, res: Response, next: NextFunction) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      // if (!user) {
-      //   res.status(401).send({ message: 'Неправильные почта или пароль' });
-      //   // throw new UnauthorizedError('Неправильные почта или пароль');
-      // }
-      res.send({
-        token: jwt.sign(
-          { _id: user._id },
-          // 'some-secret-key',
-          process.env.TOKEN_ENV as string || crypto.randomBytes(32).toString('hex'),
-          { expiresIn: '7d' },
-        ),
-      });
+      if (!user) {
+        next(new UnauthorizedError('Неправильные почта или пароль'));
+      }
+      const token = jwt.sign(
+        { _id: user._id },
+        'some-secret-key',
+        // (process.env.TOKEN_ENV as string) || crypto.randomBytes(32).toString('hex'),
+        { expiresIn: '7d' },
+      );
+      res.cookie('jwt', token, { httpOnly: true, expires: new Date(Date.now() + 3600000 * 24 * 7), sameSite: true });
+      res.send({ user, token });
     })
-    .catch((err) => {
-      // res.status(401).send({ message: err.message });
-      console.log(err.message);
-      res.status(401).send({ message: 'Неправильные почта или пароль' });
-      next(err);
-    });
-    // .catch(next);
+    .catch(next);
 };
 
-// export const loginUser = (req: Request, res: Response, next: NextFunction) => {
-//   const { email, password } = req.body;
+export const getCurrentUser = (req: UserRequest, res: Response, next: NextFunction) => {
+  const userId = req.user?._id;
 
-//   return User.findOne({ email }).select('+password')
-//     .then((user) => {
-//       if (!user) {
-//         throw new Error('Неправильные почта или пароль');
-//       }
-//       return bcrypt.compare(password, user.password)
-//         .then((matched) => {
-//           if (!matched) {
-//             throw new Error('Неправильные почта или пароль');
-//           }
-//           const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
-//           res.send({ token });
-//         });
-//     })
-//     .catch(next);
-// };
+  User.findById(userId)
+    .then((user) => res.send(user))
+    // .then((user) => {
+    //   // console.log(userId)
+    //   if (!user) {
+    //     next(new ForbiddenError('Доступ невозможен'));
+    //   }
+    //   res.status(STATUS_SUCCESS).send(user);
+    // })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Пользователь по указанному ID не найден'));
+      }
+      next(err);
+    });
+};

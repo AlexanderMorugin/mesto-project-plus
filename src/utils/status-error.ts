@@ -9,10 +9,15 @@ export const CREATE_SUCCES_MESSAGE = 'Ресурс успешно создан';
 export const STATUS_BAD_REQUEST = 400;
 export const INVALID_DATA_MESSAGE = 'Переданы некорректные данные';
 
+export const STATUS_UNAUTHORIZED = 401;
+export const STATUS_FORBIDDEN = 403;
+
 // 404 — карточка или пользователь не найден.
 export const STATUS_NOT_FOUND = 404;
 export const USER_NOT_FOUND_MESSAGE = 'Пользователь не найден';
 export const CARD_NOT_FOUND_MESSAGE = 'Карточкa не найденa';
+
+export const STATUS_CONFLICT = 409;
 
 // 500 — ошибка по умолчанию.
 export const STATUS_SERVER_ERROR = 500;
