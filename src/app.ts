@@ -1,16 +1,21 @@
 import express, { Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
-import rateLimit from 'express-rate-limit';
+
 import helmet from 'helmet';
 import { errors } from 'celebrate';
 import userRouter from './routes/user-routes';
 import cardRouter from './routes/card-routes';
+import notFoundRouter from './routes/not-found-routes';
 import { UserRequest } from './utils/user-request';
 import auth from './middlewares/auth-middleware';
-import { createUser, loginUser } from './controllers/user-controller';
+// import { createUser, loginUser } from './controllers/user-controller';
+import userController from './controllers/user-controller';
 import { requestLogger, errorLogger } from './middlewares/logger-middleware';
 // eslint-disable-next-line import/named
 import { errorsMiddleware } from './middlewares/errors-middleware';
+import userValidator from './validation/user-validation';
+import limiter from './utils/limiter';
+
 
 require('dotenv').config();
 
@@ -19,10 +24,7 @@ const URL = 'mongodb://localhost:27017/mestodb';
 
 const app = express();
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // за 15 минут
-  max: 100, // можно совершить максимум 100 запросов с одного IP
-});
+
 
 // подключаем rate-limiter
 app.use(limiter);
@@ -37,8 +39,8 @@ app.use(requestLogger); // подключаем логер запросов
 
 // роуты, не требующие авторизации,
 // например, регистрация и логин
-app.post('/signup', createUser);
-app.post('/signin', loginUser);
+app.post('/signup', userValidator.validateCreateUser, userController.createUser);
+app.post('/signin', userValidator.validateLoginUser, userController.loginUser);
 
 // авторизация
 // app.use(auth);
@@ -46,6 +48,7 @@ app.post('/signin', loginUser);
 // роуты, которым авторизация нужна
 app.use('/users', userRouter);
 app.use('/cards', cardRouter);
+app.use('*', notFoundRouter);
 
 app.use(errorLogger); // подключаем логер ошибок
 // подключить после обработчиков роутов и до обработчиков ошибок

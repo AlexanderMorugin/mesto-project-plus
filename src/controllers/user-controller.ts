@@ -17,7 +17,7 @@ import { ConflictError } from '../errors/conflict-error';
 import { UnauthorizedError } from '../errors/unauthorized-error';
 import { ForbiddenError } from '../errors/forbidden-error';
 
-export const getUsers = (req: Request, res: Response, next: NextFunction) => {
+const getUsers = (req: Request, res: Response, next: NextFunction) => {
   User.find({})
     .then((users) => {
       res.status(STATUS_SUCCESS).send(users);
@@ -25,7 +25,7 @@ export const getUsers = (req: Request, res: Response, next: NextFunction) => {
     .catch(next);
 };
 
-export const getUserById = (req: Request, res: Response, next: NextFunction) => {
+const getUserById = (req: Request, res: Response, next: NextFunction) => {
   const { userId } = req.params;
 
   return User.findById(userId)
@@ -43,7 +43,7 @@ export const getUserById = (req: Request, res: Response, next: NextFunction) => 
     });
 };
 
-export const createUser = (req: Request, res: Response, next: NextFunction) => {
+const createUser = (req: Request, res: Response, next: NextFunction) => {
   const { name, about, avatar, email, password } = req.body;
 
   return bcrypt
@@ -78,7 +78,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
     .catch(next);
 };
 
-export const updateUser = (req: UserRequest, res: Response, next: NextFunction) => {
+const updateUser = (req: UserRequest, res: Response, next: NextFunction) => {
   const { name, about } = req.body;
   const userId = req.user?._id;
 
@@ -104,7 +104,7 @@ export const updateUser = (req: UserRequest, res: Response, next: NextFunction) 
     });
 };
 
-export const updateAvatar = (req: UserRequest, res: Response, next: NextFunction) => {
+const updateAvatar = (req: UserRequest, res: Response, next: NextFunction) => {
   const { avatar } = req.body;
   const userId = req.user?._id;
 
@@ -130,7 +130,7 @@ export const updateAvatar = (req: UserRequest, res: Response, next: NextFunction
     });
 };
 
-export const loginUser = (req: Request, res: Response, next: NextFunction) => {
+const loginUser = (req: Request, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
@@ -144,13 +144,13 @@ export const loginUser = (req: Request, res: Response, next: NextFunction) => {
         // (process.env.TOKEN_ENV as string) || crypto.randomBytes(32).toString('hex'),
         { expiresIn: '7d' },
       );
-      res.cookie('jwt', token, { httpOnly: true, expires: new Date(Date.now() + 3600000 * 24 * 7), sameSite: true });
+      // res.cookie('jwt', token, { httpOnly: true, expires: new Date(Date.now() + 3600000 * 24 * 7), sameSite: true });
       res.send({ user, token });
     })
     .catch(next);
 };
 
-export const getCurrentUser = (req: UserRequest, res: Response, next: NextFunction) => {
+const getCurrentUser = (req: UserRequest, res: Response, next: NextFunction) => {
   const userId = req.user?._id;
 
   User.findById(userId)
@@ -168,4 +168,14 @@ export const getCurrentUser = (req: UserRequest, res: Response, next: NextFuncti
       }
       next(err);
     });
+};
+
+export default {
+  getUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  updateAvatar,
+  loginUser,
+  getCurrentUser,
 };
