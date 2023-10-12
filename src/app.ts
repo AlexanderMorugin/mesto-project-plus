@@ -9,11 +9,11 @@ import notFoundRouter from './routes/not-found-routes';
 import { UserRequest } from './utils/user-request';
 import auth from './middlewares/auth-middleware';
 // import { createUser, loginUser } from './controllers/user-controller';
-import userController from './controllers/user-controller';
+import controller from './controllers/user-controller';
 import { requestLogger, errorLogger } from './middlewares/logger-middleware';
 // eslint-disable-next-line import/named
 import { errorsMiddleware } from './middlewares/errors-middleware';
-import userValidator from './validation/user-validation';
+import validation from './validation/validation';
 import limiter from './utils/limiter';
 
 
@@ -39,8 +39,8 @@ app.use(requestLogger); // подключаем логер запросов
 
 // роуты, не требующие авторизации,
 // например, регистрация и логин
-app.post('/signup', userValidator.validateCreateUser, userController.createUser);
-app.post('/signin', userValidator.validateLoginUser, userController.loginUser);
+app.post('/signup', validation.validateCreateUser, controller.createUser);
+app.post('/signin', validation.validateLoginUser, controller.loginUser);
 
 // авторизация
 // app.use(auth);

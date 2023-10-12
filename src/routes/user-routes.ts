@@ -1,13 +1,13 @@
 import { Router } from 'express';
-import userController from '../controllers/user-controller';
-import userValidator from '../validation/user-validation';
+import controller from '../controllers/user-controller';
+import validation from '../validation/validation';
 
 const userRouter = Router();
 
-userRouter.get('/', userController.getUsers);
-userRouter.get('/me', userController.getCurrentUser);
-userRouter.get('/:userId', userValidator.validateGetUserById, userController.getUserById);
-userRouter.patch('/me', userValidator.validateUpdateUser, userController.updateUser);
-userRouter.patch('/me/avatar', userValidator.validateUpdateAvatar, userController.updateAvatar);
+userRouter.get('/', controller.getUsers);
+userRouter.get('/me', controller.getCurrentUser);
+userRouter.get('/:userId', validation.validateGetUserById, controller.getUserById);
+userRouter.patch('/me', validation.validateUpdateUser, controller.updateUser);
+userRouter.patch('/me/avatar', validation.validateUpdateAvatar, controller.updateAvatar);
 
 export default userRouter;

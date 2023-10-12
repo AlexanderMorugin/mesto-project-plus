@@ -1,5 +1,5 @@
 import { celebrate, Joi } from 'celebrate';
-import { EMAIL_REG_EXP, URL_REG_EXP } from '../utils/validate';
+import { EMAIL_REG_EXP, ID_REG_EXP, URL_REG_EXP } from '../utils/validate';
 
 const validateGetUserById = celebrate({
   params: Joi.object().keys({
@@ -37,10 +37,28 @@ const validateLoginUser = celebrate({
   }),
 });
 
+const validateCreateCard = celebrate({
+  body: Joi.object().keys({
+    name: Joi.string().required().min(2).max(30),
+    link: Joi.string().required().pattern(new RegExp(URL_REG_EXP)),
+  }),
+});
+
+const validateCardById = celebrate({
+  params: Joi.object().keys({
+    cardId: Joi.string().required().pattern(new RegExp(ID_REG_EXP)),
+  }),
+});
+
+
+
 export default {
   validateGetUserById,
   validateCreateUser,
   validateUpdateUser,
   validateUpdateAvatar,
   validateLoginUser,
+
+  validateCreateCard,
+  validateCardById,
 };
