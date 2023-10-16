@@ -50,15 +50,12 @@ const validateCardById = celebrate({
   }),
 });
 
-
-
 export default {
   validateGetUserById,
   validateCreateUser,
   validateUpdateUser,
   validateUpdateAvatar,
   validateLoginUser,
-
   validateCreateCard,
   validateCardById,
 };

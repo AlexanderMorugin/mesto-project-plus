@@ -1,21 +1,16 @@
-/* eslint-disable consistent-return */
 import { Request, Response, NextFunction } from 'express';
-
-// eslint-disable-next-line import/no-unresolved
-import { UserRequest } from 'utils/user-request';
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
+// import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
+import { UserRequest } from '../utils/user-request';
 import User from '../models/user';
-import {
-  STATUS_CREATED,
-  STATUS_SUCCESS,
-} from '../utils/status-error';
-import { NotFoundError } from '../errors/not-found-error';
-import { BadRequestError } from '../errors/bad-request-error';
-import { ConflictError } from '../errors/conflict-error';
-import { UnauthorizedError } from '../errors/unauthorized-error';
-import { ForbiddenError } from '../errors/forbidden-error';
+import { STATUS_CREATED, STATUS_SUCCESS } from '../utils/status-error';
+import NotFoundError from '../errors/not-found-error';
+import BadRequestError from '../errors/bad-request-error';
+import ConflictError from '../errors/conflict-error';
+// import UnauthorizedError from '../errors/unauthorized-error';
+import ForbiddenError from '../errors/forbidden-error';
+import JWT_KEY from '../utils/jwt-key';
 
 const getUsers = (req: Request, res: Response, next: NextFunction) => {
   User.find({})
@@ -26,18 +21,16 @@ const getUsers = (req: Request, res: Response, next: NextFunction) => {
 };
 
 const getUserById = (req: Request, res: Response, next: NextFunction) => {
-  const { userId } = req.params;
-
-  return User.findById(userId)
+  User.findById(req.params.userId)
     .then((user) => {
       if (!user) {
-        next(new NotFoundError('Пользователь по указанному ID не найден'));
+        next(new NotFoundError('Пользователь с данным ID не найден'));
       }
       res.status(STATUS_SUCCESS).send(user);
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Пользователь по указанному ID не найден'));
+        next(new NotFoundError('Пользователь с данным ID не найден'));
       }
       next(err);
     });
@@ -46,8 +39,7 @@ const getUserById = (req: Request, res: Response, next: NextFunction) => {
 const createUser = (req: Request, res: Response, next: NextFunction) => {
   const { name, about, avatar, email, password } = req.body;
 
-  return bcrypt
-    .hash(password, 10)
+  return bcrypt.hash(password, 10)
     .then((hash) => {
       User.create({
         name,
@@ -67,7 +59,7 @@ const createUser = (req: Request, res: Response, next: NextFunction) => {
         })
         .catch((err) => {
           if (err.code === 11000) {
-            next(new ConflictError('Пользователь с такой почтой уже существует'));
+            next(new ConflictError('Пользователь с таким email уже существует'));
           }
           if (err.name === 'ValidationError') {
             next(new BadRequestError('Неправильные почта или пароль'));
@@ -130,38 +122,31 @@ const updateAvatar = (req: UserRequest, res: Response, next: NextFunction) => {
     });
 };
 
-const loginUser = (req: Request, res: Response, next: NextFunction) => {
+const loginUser = (req: UserRequest, res: Response, next: NextFunction) => {
   const { email, password } = req.body;
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) {
-        next(new UnauthorizedError('Неправильные почта или пароль'));
-      }
       const token = jwt.sign(
         { _id: user._id },
-        'some-secret-key',
+        JWT_KEY,
         // (process.env.TOKEN_ENV as string) || crypto.randomBytes(32).toString('hex'),
         { expiresIn: '7d' },
       );
-      // res.cookie('jwt', token, { httpOnly: true, expires: new Date(Date.now() + 3600000 * 24 * 7), sameSite: true });
+      res.cookie('jwt', token, { httpOnly: true, expires: new Date(Date.now() + 3600000 * 24 * 7), sameSite: true });
       res.send({ user, token });
     })
     .catch(next);
 };
 
 const getCurrentUser = (req: UserRequest, res: Response, next: NextFunction) => {
-  const userId = req.user?._id;
-
-  User.findById(userId)
-    .then((user) => res.send(user))
-    // .then((user) => {
-    //   // console.log(userId)
-    //   if (!user) {
-    //     next(new ForbiddenError('Доступ невозможен'));
-    //   }
-    //   res.status(STATUS_SUCCESS).send(user);
-    // })
+  User.findById(req.user?._id)
+    .then((user) => {
+      if (!user) {
+        next(new ForbiddenError('Пользователь не найден'));
+      }
+      res.status(STATUS_SUCCESS).send({ data: user });
+    })
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new NotFoundError('Пользователь по указанному ID не найден'));

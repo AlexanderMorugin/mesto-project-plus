@@ -1,8 +1,7 @@
-/* eslint-disable import/prefer-default-export */
 import { STATUS_UNAUTHORIZED } from '../utils/status-error';
 import { IError } from '../utils/i-error';
 
-export class UnauthorizedError extends Error implements IError {
+class UnauthorizedError extends Error implements IError {
   statusCode: number;
 
   constructor(message: string) {
@@ -10,3 +9,5 @@ export class UnauthorizedError extends Error implements IError {
     this.statusCode = STATUS_UNAUTHORIZED;
   }
 }
+
+export default UnauthorizedError;

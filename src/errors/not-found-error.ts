@@ -1,8 +1,7 @@
-/* eslint-disable import/prefer-default-export */
 import { STATUS_NOT_FOUND } from '../utils/status-error';
 import { IError } from '../utils/i-error';
 
-export class NotFoundError extends Error implements IError {
+class NotFoundError extends Error implements IError {
   statusCode: number;
 
   constructor(message: string) {
@@ -10,3 +9,5 @@ export class NotFoundError extends Error implements IError {
     this.statusCode = STATUS_NOT_FOUND;
   }
 }
+
+export default NotFoundError;

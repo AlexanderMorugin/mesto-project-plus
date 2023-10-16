@@ -3,7 +3,6 @@ import { ObjectId } from 'mongoose';
 
 export interface UserRequest extends Request {
   user?: {
-    // _id: string;
     _id: ObjectId;
   };
 }

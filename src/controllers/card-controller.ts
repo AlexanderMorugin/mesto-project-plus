@@ -1,12 +1,10 @@
-/* eslint-disable import/no-import-module-exports */
 import { Request, Response, NextFunction } from 'express';
-// eslint-disable-next-line import/no-unresolved
 import { STATUS_CREATED, STATUS_SUCCESS } from '../utils/status-error';
 import Card from '../models/card';
 import { UserRequest } from '../utils/user-request';
-import { BadRequestError } from '../errors/bad-request-error';
-import { NotFoundError } from '../errors/not-found-error';
-import { ForbiddenError } from '../errors/forbidden-error';
+import NotFoundError from '../errors/not-found-error';
+import BadRequestError from '../errors/bad-request-error';
+import ForbiddenError from '../errors/forbidden-error';
 
 const getCards = (req: Request, res: Response, next: NextFunction) => {
   Card.find({}).populate(['owner', 'likes'])
@@ -18,9 +16,8 @@ const getCards = (req: Request, res: Response, next: NextFunction) => {
 
 const createCard = (req: UserRequest, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
-  const userId = req.user?._id;
 
-  return Card.create({ name, link, owner: userId })
+  return Card.create({ name, link, owner: req.user?._id })
     .then((card) => {
       res.status(STATUS_CREATED).send(card);
     })
@@ -32,39 +29,40 @@ const createCard = (req: UserRequest, res: Response, next: NextFunction) => {
     });
 };
 
-const deleteCardById = (req: UserRequest, res: Response, next: NextFunction) => {
-  const { cardId } = req.params;
-  const userId = req.user?._id;
+export const deleteCardById = (req: UserRequest, res: Response, next: NextFunction) => {
+  console.log('cardId: ', req.params.cardId);
+  console.log('userId: ', req.user!._id);
 
-  return Card.findById(cardId)
+  Card.findById(req.params.cardId)
     .then((card) => {
+      console.log('card-owner: ', card?.owner);
+
       if (!card) {
         next(new NotFoundError('Карточка по указанному _id не найдена'));
+        return;
       }
 
-      if (card?.owner === userId) {
-        card?.remove()
-          .then(() => res.status(STATUS_SUCCESS).send({ data: card }))
-          .catch(next);
+      if (card.owner !== req.user!._id) {
+        next(new ForbiddenError('У вас нет прав для удаления этой карточки'));
       } else {
-        next(new ForbiddenError('У вас нет прав для удаления'));
+        card.remove()
+          .then(() => res.send({ data: card }))
+          .catch(next);
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
         next(new NotFoundError('Карточка по указанному _id не найдена'));
+        return;
       }
       next(err);
     });
 };
 
 const likeCard = (req: UserRequest, res: Response, next: NextFunction) => {
-  const { cardId } = req.params;
-  const userId = req.user?._id;
-
-  return Card.findByIdAndUpdate(
-    cardId,
-    { $addToSet: { likes: userId } },
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $addToSet: { likes: req.user?._id } },
     {
       new: true,
       runValidators: true,
@@ -72,14 +70,14 @@ const likeCard = (req: UserRequest, res: Response, next: NextFunction) => {
   ).populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
-        next(new NotFoundError('Карточка по указанному _id не найдена'));
+        next(new NotFoundError('Карточка по указанному ID не найдена'));
       } else {
         res.status(STATUS_CREATED).send({ data: card });
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Передан несуществующий _id карточки'));
+        next(new NotFoundError('Неправильный ID карточки'));
       }
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Переданы некорректные данные'));
@@ -89,12 +87,9 @@ const likeCard = (req: UserRequest, res: Response, next: NextFunction) => {
 };
 
 const dislikeCard = (req: UserRequest, res: Response, next: NextFunction) => {
-  const { cardId } = req.params;
-  const userId = req.user?._id;
-
-  return Card.findByIdAndUpdate(
-    cardId,
-    { $pull: { likes: userId } },
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $pull: { likes: req.user?._id } },
     {
       new: true,
       runValidators: true,
@@ -102,14 +97,15 @@ const dislikeCard = (req: UserRequest, res: Response, next: NextFunction) => {
   ).populate(['owner', 'likes'])
     .then((card) => {
       if (!card) {
-        next(new NotFoundError('Карточка по указанному _id не найдена'));
+        next(new NotFoundError('Карточка по указанному ID не найдена'));
       } else {
         res.status(STATUS_SUCCESS).send({ data: card });
       }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new NotFoundError('Передан несуществующий _id карточки'));
+        next(new NotFoundError('Неправильный ID карточки'));
+        return;
       }
       if (err.name === 'ValidationError') {
         next(new BadRequestError('Переданы некорректные данные'));
