@@ -1,21 +1,18 @@
+// 200 - Запрос успешно обработан
 export const STATUS_SUCCESS = 200;
-export const SUCCES_MESSAGE = 'Запрос успешно обработан';
-
+// 201 - Ресурс успешно создан
 export const STATUS_CREATED = 201;
-export const CREATE_SUCCES_MESSAGE = 'Ресурс успешно создан';
 
-// eslint-disable-next-line max-len
-// 400 — переданы некорректные данные в методы создания карточки, пользователя, обновления аватара пользователя или профиля;
+// Bad Request Error 400 — переданы некорректные данные в методы создания карточки,
+// пользователя, обновления аватара пользователя или профиля;
 export const STATUS_BAD_REQUEST = 400;
-export const INVALID_DATA_MESSAGE = 'Переданы некорректные данные';
-
-// 404 — карточка или пользователь не найден.
+// Unauthorized Error 401 - отказ в доступе
+export const STATUS_UNAUTHORIZED = 401;
+// Forbidden Error 403 - ограничение или отсутствие доступа к материалу
+export const STATUS_FORBIDDEN = 403;
+// Not Found Error 404 — карточка, пользователь или страница не найдены.
 export const STATUS_NOT_FOUND = 404;
-export const USER_NOT_FOUND_MESSAGE = 'Пользователь не найден';
-export const CARD_NOT_FOUND_MESSAGE = 'Карточкa не найденa';
-
-// 500 — ошибка по умолчанию.
+// Conflict Error 409 - пользователь пытается зарегистрироваться по уже существующему в базе email
+export const STATUS_CONFLICT = 409;
+// Server Error 500 — ошибка по умолчанию.
 export const STATUS_SERVER_ERROR = 500;
-export const SERVER_ERROR_MESSAGE = 'Произошла ошибка на сервере';
-
-export const CARD_DELETE_MESSAGE = 'Карточка успешно удалена';

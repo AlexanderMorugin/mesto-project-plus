@@ -1,124 +1,123 @@
-/* eslint-disable import/no-import-module-exports */
-import { Request, Response } from 'express';
-// eslint-disable-next-line import/no-unresolved
-import {
-  CARD_NOT_FOUND_MESSAGE,
-  // eslint-disable-next-line import/named
-  CREATE_SUCCES_MESSAGE,
-  INVALID_DATA_MESSAGE,
-  SERVER_ERROR_MESSAGE,
-  STATUS_BAD_REQUEST,
-  STATUS_CREATED,
-  STATUS_NOT_FOUND,
-  STATUS_SERVER_ERROR,
-  STATUS_SUCCESS,
-  SUCCES_MESSAGE,
-} from '../utils/status-error';
+import { Request, Response, NextFunction } from 'express';
+import { STATUS_CREATED, STATUS_SUCCESS } from '../utils/status-error';
 import Card from '../models/card';
 import { UserRequest } from '../utils/user-request';
+import NotFoundError from '../errors/not-found-error';
+import BadRequestError from '../errors/bad-request-error';
+import ForbiddenError from '../errors/forbidden-error';
 
-export const getCards = (req: Request, res: Response) => {
-  Card
-    .find({})
+const getCards = (req: Request, res: Response, next: NextFunction) => {
+  Card.find({}).populate(['owner', 'likes'])
     .then((cards) => {
-      console.log(SUCCES_MESSAGE);
       res.status(STATUS_SUCCESS).send({ data: cards });
     })
-    .catch((err) => {
-      console.log(err.message);
-      res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
-    });
+    .catch(next);
 };
 
-export const createCard = (req: UserRequest, res: Response) => {
+const createCard = (req: UserRequest, res: Response, next: NextFunction) => {
   const { name, link } = req.body;
-  const userId = req.user?._id;
 
-  return Card
-    .create({ name, link, owner: userId })
+  return Card.create({ name, link, owner: req.user?._id })
     .then((card) => {
-      console.log(CREATE_SUCCES_MESSAGE);
-      res.status(STATUS_CREATED).send({ data: card });
+      res.status(STATUS_CREATED).send(card);
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        res.status(STATUS_BAD_REQUEST).send({ message: INVALID_DATA_MESSAGE });
-      } else {
-        console.log(err.message);
-        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+        next(new BadRequestError('Переданы некорректные данные'));
       }
+      next(err);
     });
 };
 
-export const deleteCardById = (req: Request, res: Response) => {
-  const { cardId } = req.params;
+export const deleteCardById = (req: UserRequest, res: Response, next: NextFunction) => {
+  console.log('cardId: ', req.params.cardId);
+  console.log('userId: ', req.user!._id);
 
-  return Card
-    .findByIdAndDelete(cardId)
-    .then((result) => {
-      console.log(SUCCES_MESSAGE);
-      res.status(STATUS_SUCCESS).json(result);
-    })
-    .catch((err) => {
-      if (err.name === 'NotFoundError') {
-        res.status(STATUS_NOT_FOUND).send({ message: CARD_NOT_FOUND_MESSAGE });
-      } else {
-        console.log(err.message);
-        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+  Card.findById(req.params.cardId)
+    .then((card) => {
+      console.log('card-owner: ', card?.owner);
+
+      if (!card) {
+        next(new NotFoundError('Карточка по указанному _id не найдена'));
+        return;
       }
-    });
-};
 
-export const likeCard = (req: UserRequest, res: Response) => {
-  const { cardId } = req.params;
-  const userId = req.user?._id;
-
-  return Card
-    .findByIdAndUpdate(
-      cardId,
-      { $addToSet: { likes: userId } },
-      { new: true },
-    )
-    .then((result) => {
-      console.log(CREATE_SUCCES_MESSAGE);
-      res.status(STATUS_CREATED).json(result);
+      if (card.owner !== req.user!._id) {
+        next(new ForbiddenError('У вас нет прав для удаления этой карточки'));
+      } else {
+        card.remove()
+          .then(() => res.send({ data: card }))
+          .catch(next);
+      }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(STATUS_BAD_REQUEST).send({ message: INVALID_DATA_MESSAGE });
-      } else if (err.name === 'NotFoundError') {
-        res.status(STATUS_NOT_FOUND).send({ message: CARD_NOT_FOUND_MESSAGE });
-      } else {
-        console.log(err.message);
-        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+        next(new NotFoundError('Карточка по указанному _id не найдена'));
+        return;
       }
+      next(err);
     });
 };
 
-export const dislikeCard = (req: UserRequest, res: Response) => {
-  const { cardId } = req.params;
-  const userId = req.user?._id;
-
-  return Card
-    .findByIdAndUpdate(cardId, { $pull: { likes: userId } }, { new: true })
-    .then((result) => {
-      console.log(SUCCES_MESSAGE);
-      res.status(STATUS_SUCCESS).json(result);
+const likeCard = (req: UserRequest, res: Response, next: NextFunction) => {
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $addToSet: { likes: req.user?._id } },
+    {
+      new: true,
+      runValidators: true,
+    },
+  ).populate(['owner', 'likes'])
+    .then((card) => {
+      if (!card) {
+        next(new NotFoundError('Карточка по указанному ID не найдена'));
+      } else {
+        res.status(STATUS_CREATED).send({ data: card });
+      }
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(STATUS_BAD_REQUEST).send({ message: INVALID_DATA_MESSAGE });
-      } else if (err.name === 'NotFoundError') {
-        res.status(STATUS_NOT_FOUND).send({ message: CARD_NOT_FOUND_MESSAGE });
-      } else {
-        console.log(err.message);
-        res.status(STATUS_SERVER_ERROR).send({ message: SERVER_ERROR_MESSAGE });
+        next(new NotFoundError('Неправильный ID карточки'));
       }
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные'));
+      }
+      next(err);
     });
 };
 
-// module.exports.getCards = (req: Request, res: Response) => Card
-//   .find({})
-//   .populate('owner')
-//   .then((cards) => res.send({ data: cards }))
-//   .catch((err) => res.status(500).send({ message: err.message }));
+const dislikeCard = (req: UserRequest, res: Response, next: NextFunction) => {
+  Card.findByIdAndUpdate(
+    req.params.cardId,
+    { $pull: { likes: req.user?._id } },
+    {
+      new: true,
+      runValidators: true,
+    },
+  ).populate(['owner', 'likes'])
+    .then((card) => {
+      if (!card) {
+        next(new NotFoundError('Карточка по указанному ID не найдена'));
+      } else {
+        res.status(STATUS_SUCCESS).send({ data: card });
+      }
+    })
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new NotFoundError('Неправильный ID карточки'));
+        return;
+      }
+      if (err.name === 'ValidationError') {
+        next(new BadRequestError('Переданы некорректные данные'));
+      }
+      next(err);
+    });
+};
+
+export default {
+  getCards,
+  createCard,
+  deleteCardById,
+  likeCard,
+  dislikeCard,
+};

@@ -1,10 +1,11 @@
-import { model, Schema, Types } from 'mongoose';
+import { model, Schema } from 'mongoose';
+import { URL_REG_EXP } from '../utils/validate';
 
 export interface ICard {
   name: string;
   link: string;
-  owner: Types.ObjectId;
-  likes: Types.ObjectId[];
+  owner: Schema.Types.ObjectId;
+  likes: Schema.Types.ObjectId[];
   createdAt: Date;
 }
 
@@ -18,6 +19,10 @@ const cardSchema = new Schema<ICard>({
   link: {
     type: String,
     required: true,
+    validate: {
+      validator: (v: string) => URL_REG_EXP.test(v),
+      message: 'Ссылка на изображение карточки не прошла валидацию.',
+    },
   },
   owner: {
     type: Schema.Types.ObjectId,
