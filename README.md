@@ -33,6 +33,7 @@ npm i
 Запуск проекта
 ```
 npm start
+npm run dev
 ```
 
 --------
